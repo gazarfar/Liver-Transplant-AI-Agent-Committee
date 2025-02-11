@@ -2,13 +2,12 @@
 """
 Author: Ghazal Azarfar
 Date: February 2025
-Description:
-This script facilitates a multidisciplinary AI-driven liver transplant selection committee.
-It employs multiple agents (hepatologist, cardiologist, transplant surgeon, and social worker)
-to evaluate patient eligibility for transplantation based on medical, social, and surgical criteria.
+Description:This script facilitates a multidisciplinary AI-driven liver transplant selection committee.
+            It employs multiple agents (hepatologist, cardiologist, transplant surgeon, and social worker)
+            to evaluate patient eligibility for transplantation based on medical, social, and surgical criteria.
 
-The script processes patient vignettes from an Excel file and generates structured assessments
-through AI-powered decision-making.
+            The script processes patient vignettes from an Excel file and generates structured assessments
+            through AI-powered decision-making.
 
 """
 import pandas as pd
