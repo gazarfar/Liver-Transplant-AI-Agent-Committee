@@ -259,6 +259,8 @@ output_files = {
     "social_worker": "Social_Worker_Analysis.txt",
     "token_usage": "Token_Usage.txt"
 }
+
+                        
 for i in range(2800, 3200):
     patient_id = str(patient_ids[i])
     output = committee.kickoff(inputs={"input": vignettes[i]})
