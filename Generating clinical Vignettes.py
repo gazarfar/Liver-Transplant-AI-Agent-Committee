@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 19 13:43:55 2024
+Author: Ghazal Azarfar
+Date: February 2025
+Description: This script processes patient data from an Excel file and generates clinical vignettes
+             using an AI model. The vignettes assist liver transplant selection committees in evaluating
+             patient eligibility.
 
-@author: kasha
 """
-#   Required libraries
-#pip install -q crewai
-#pip install -q crewai[tools]
-#pip install crewai[agentops]
-
-
+import concurrent.futures
 import os
 import pandas as pd
 from langchain_openai import ChatOpenAI
 from crewai import Crew, Agent, Task
 #import agentops
-#add the keys here
+
+# Ensure API key is set via environment variable
+os.environ["OPENAI_API_KEY"] = ""
 
 
-
+# Define the Hepatologist agent
 Hepatologist1 = Agent(
   role="""Hepatologist at a transplant department""",
   goal="""Write a clinical vignettes for liver transplant selection commitee meeting using {input}""",
@@ -29,7 +29,7 @@ Hepatologist1 = Agent(
   llm = ChatOpenAI(model_name = 'gpt-4o',temperature=0.1,api_key=''),
   verbose = False)
 
-
+# Define the report writing task
 report_writing = Task(
     description="""Using the patient data in {input}  write a report for the Liver transplant committee meeting.
     Your report include all the important information regarding the patient's health such as: patient's characteristic, medical history, and social background.
@@ -51,6 +51,7 @@ report_writing = Task(
                        clinical history and social history""")
 
 
+# Create the AI crew with the defined agent and task
 my_crew = Crew(
     agents=[Hepatologist1],
     tasks=[report_writing],
@@ -59,19 +60,35 @@ my_crew = Crew(
 )
 
 
+# Load patient data from an Excel file
 df = pd.read_excel("12000-cases-2024-10-28-vignettes.xlsx")
-Patient_ID = df['Patient ID'].values
-Patient_ID = Patient_ID[6266:]
-
-for patient in Patient_ID:
-  Tabel = []
-  for col in df.loc[df['Patient ID'] == patient]:
-    Tabel.append(col + ':' + str(df.loc[df['Patient ID'] == patient][col].values))
-
-  result = my_crew.kickoff(inputs={"input": Tabel})
-
-  with open("clinical_vignettes_11489_cases_20241018.txt", "a") as f:
-    print('####################################',file=f)
-    print(result, file=f)
 
 
+# Process patient IDs from a specific subset (adjustable as needed)
+Patient_IDs = df['Patient ID'].values[0:1]
+
+# Function to generate a clinical vignette for a single patient
+def generate_vignette(patient):
+    try:
+        patient_data = []
+        for col in df.loc[df['Patient ID'] == patient]:
+            patient_data.append(f"{col}: {df.loc[df['Patient ID'] == patient][col].values[0]}")
+
+        result = my_crew.kickoff(inputs={"input": patient_data})
+
+        return f"####################################\n{result}\n"
+    
+    except Exception as e:
+        return f"Error processing Patient ID {patient}: {str(e)}\n"
+
+# Parallel execution using ThreadPoolExecutor
+output_file = "clinical_vignettes_output.txt"
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    results = list(executor.map(generate_vignette, Patient_IDs))
+
+# Save all outputs to a file
+with open(output_file, "w") as f:
+    f.writelines(results)
+
+print(f"Clinical vignettes generated and saved to {output_file}")
