@@ -10,8 +10,8 @@ Description:This script facilitates a multidisciplinary AI-driven liver transpla
             through AI-powered decision-making.
 
 """
-import pandas as pd
 import os
+import pandas as pd
 import agentops
 from langchain_openai import ChatOpenAI
 from crewai import Crew, Agent, Task, Process
@@ -19,8 +19,10 @@ from crewai import Crew, Agent, Task, Process
 
 # Ensure API key is set via environment variable
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OpenAI API key not found. Set it as an environment variable.")
 
-# Define agents with specific roles and tools
+# Define agents for the transplant selection committee
 cardiologist = Agent(
     role="""A transplant cardiologist""",
     goal=""" Determine if a patient presenting with a clinical profile of {input} would have a survival benefit of
@@ -158,7 +160,7 @@ Transplant_surgeon = Agent(
 
 
 
-# Create tasks for the agents
+# Define committee tasks
 cardio_task = Task(
     description="""Let's work this out in a step-by-step way to be sure we have the right answer. Determine if a patient presenting
                   with a clinical profile of {input} would have a survival benefit of greater than or equal to one year if
@@ -211,7 +213,7 @@ greater than or equal to one year if they received a liver transplant. Provide t
     After the paragraph provide a single Yes or No answer.""",
     human_input=False )
 
-# Assemble the crew with a sequential process
+# Assemble the AI committee
 Committee = Crew(
     agents=[ social_worker,cardiologist, Transplant_surgeon,hepatologist],
     tasks=[ social_task, cardio_task,surgical_task, hepatologist_task1],
@@ -225,47 +227,51 @@ Committee = Crew(
 
 #import agentops
 #agentops.init("36e65ebd-230a-4c6c-89c0-553887ca35a6")
-file = open("clinical_vignettes_11489_cases_20241018-5127-to-11488.txt", "r")
-content = file.read()
-file.close()
-vignettes = content.split('####################################\n')
-vignettes = vignettes[1:]
 
-df = pd.read_excel("12000-cases-2024-10-28-vignettes.xlsx")
-Patient_ID = df['Patient ID'].values
-Patient_ID = Patient_ID[5127:]
+# Load patient vignettes
+data_file = "12000-cases-2024-10-28-vignettes.xlsx"
+if not os.path.exists(data_file):
+    raise FileNotFoundError(f"Error: {data_file} not found.")
+            
+df = pd.read_excel(data_file)
+patient_ids = df['Patient ID'].values[5127:]
+
+# Load clinical vignettes
+vignette_file = "clinical_vignettes_11489_cases_20241018-5127-to-11488.txt"
+if not os.path.exists(vignette_file):
+    raise FileNotFoundError(f"Error: {vignette_file} not found.")
+
+with open(vignette_file, "r") as file:
+    vignettes = file.read().split('####################################\n')[1:]
+
+
+
+
+# Start AI-based assessment
 #agentops.init("36e65ebd-230a-4c6c-89c0-553887ca35a6")
 agentops.start_session()
-for i in range(2800,3200):
-  #for sc in range(0,5):
-  output = Committee.kickoff(inputs={"input": vignettes[i]})
-  with open("Committee Decision-20241028-SC-5127-to-11488.txt", "a") as f:
-    print('####################################',file=f)
-    print('Patient ID: ' + str(Patient_ID[i]),file=f)
-    print(output.raw, file=f)
-  with open("Committee Discussion-20241028-SC-5127-to-11488.txt", "a") as f:
-    print('####################################',file=f)
-    print('Patient ID: ' + str(Patient_ID[i]),file=f)
-    print(output.tasks_output, file=f)
-  with open("Hepatologist-20241028-SC-5127-to-11488.txt", "a") as f:
-    print('####################################',file=f)
-    print('Patient ID: ' + str(Patient_ID[i]),file=f)
-    print(hepatologist_task1.output, file=f)
-  with open("Cardio-20241028-SC.txt", "a") as f:
-    print('####################################',file=f)
-    print('Patient ID: ' + str(Patient_ID[i]),file=f)
-    print(cardio_task.output, file=f)
-  with open("surgon-20241028-SC-5127-to-11488.txt", "a") as f:
-    print('####################################',file=f)
-    print('Patient ID: ' + str(Patient_ID[i]),file=f)
-    print(surgical_task.output, file=f)
-  with open("Social-20241028-SC-5127-to-11488.txt", "a") as f:
-    print('####################################',file=f)
-    print('Patient ID: ' + str(Patient_ID[i]),file=f)
-    print(social_task.output, file=f)
-  with open("Token Usage- 20241028-SC-5127-to-11488.txt", "a") as f:
-    print('####################################',file=f)
-    print('Patient ID: ' + str(Patient_ID[i]),file=f)
-    print(output.token_usage,file = f)
+output_files = {
+    "committee_decision": "Committee_Decision.txt",
+    "committee_discussion": "Committee_Discussion.txt",
+    "hepatologist": "Hepatologist_Analysis.txt",
+    "cardiologist": "Cardio_Analysis.txt",
+    "surgeon": "Surgeon_Analysis.txt",
+    "social_worker": "Social_Worker_Analysis.txt",
+    "token_usage": "Token_Usage.txt"
+}
+for i in range(2800, 3200):
+    patient_id = str(patient_ids[i])
+    output = committee.kickoff(inputs={"input": vignettes[i]})
+    
+    for key, filename in output_files.items():
+        with open(filename, "a") as f:
+            print("####################################", file=f)
+            print(f"Patient ID: {patient_id}", file=f)
+            print(getattr(output, key, "No data available"), file=f)
+
+agentops.end_session(end_state='Success')
+
+print("AI-driven transplant committee evaluations completed.")
+
 
 agentops.end_session(end_state='Success')
