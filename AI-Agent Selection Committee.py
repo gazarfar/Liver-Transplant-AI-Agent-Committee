@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 19 13:47:08 2024
+Author: Ghazal Azarfar
+Date: February 2025
+Description:
+This script facilitates a multidisciplinary AI-driven liver transplant selection committee.
+It employs multiple agents (hepatologist, cardiologist, transplant surgeon, and social worker)
+to evaluate patient eligibility for transplantation based on medical, social, and surgical criteria.
 
-@author: kasha
+The script processes patient vignettes from an Excel file and generates structured assessments
+through AI-powered decision-making.
+
 """
-
 import pandas as pd
 import os
 import agentops
@@ -12,8 +18,8 @@ from langchain_openai import ChatOpenAI
 from crewai import Crew, Agent, Task, Process
 
 
-#Add keys here
-
+# Ensure API key is set via environment variable
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Define agents with specific roles and tools
 cardiologist = Agent(
