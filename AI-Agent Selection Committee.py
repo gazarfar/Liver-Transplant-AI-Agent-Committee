@@ -251,8 +251,8 @@ with open(vignette_file, "r") as file:
 #agentops.init("36e65ebd-230a-4c6c-89c0-553887ca35a6")
 agentops.start_session()
 output_files = {
-    "committee_decision": "Committee_Decision.txt",
-    "committee_discussion": "Committee_Discussion.txt",
+    "raw": "Committee_Decision.txt",
+    "tasks_output": "Committee_Discussion.txt",
     "hepatologist": "Hepatologist_Analysis.txt",
     "cardiologist": "Cardio_Analysis.txt",
     "surgeon": "Surgeon_Analysis.txt",
